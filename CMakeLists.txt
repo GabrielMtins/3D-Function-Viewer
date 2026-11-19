@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(CFunc3dViewer)
+project(3D-Function-Viewer)
 
 set(CMAKE_C_STANDARD 99)
 
