@@ -2,9 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(CFunc3dViewer)
 
 
-if(EMSCRIPTEN) 
-	set(CMAKE_C_STANDARD 11)
-else()
+if(NOT EMSCRIPTEN) 
 	set(CMAKE_C_STANDARD 99)
 	set(CMAKE_C_STANDARD_REQUIRED ON)
 	set(CMAKE_C_EXTENSIONS OFF)

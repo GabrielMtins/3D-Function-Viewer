@@ -1,6 +1,8 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#define CGLM_NO_ANONYMOUS_STRUCT
+
 #include <SDL3/SDL.h>
 #include <stb_ds.h>
 #include <cglm/struct.h>
