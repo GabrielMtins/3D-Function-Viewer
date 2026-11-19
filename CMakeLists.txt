@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 project(CFunc3dViewer)
 
+set(CMAKE_C_STANDARD 99)
 
 if(NOT EMSCRIPTEN) 
-	set(CMAKE_C_STANDARD 99)
 	set(CMAKE_C_STANDARD_REQUIRED ON)
 	set(CMAKE_C_EXTENSIONS OFF)
 endif()
@@ -25,6 +25,7 @@ if(EMSCRIPTEN)
 	if(NOT EXISTS "./vendored/SDL")
 		message("vendored/SDL does not existing, cloning from SDL repository.")
 		execute_process(COMMAND sh -c "git clone https://github.com/libsdl-org/SDL.git vendored/SDL")
+		message("Cloned SDL repository.")
 	else()
 		message("vendored/SDL exits, using it...")
 	endif()
