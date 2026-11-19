@@ -15,18 +15,21 @@ You should have received a copy of the GNU General Public License along with
 */
 
 #include "MeshData.h"
+#include "Global.h"
 
 #include <math.h>
 #include <wchar.h>
 
 static bool MeshData_Compile(MeshData *data, const char *str);
-static float MeshData_EvalHeight(MeshData *data, float x, float z);
-static vec3s MeshData_EvalPoint(MeshData *data, float x, float z);
-static vec3s MeshData_EvalNormal(MeshData *data, float x, float z);
-static float MeshData_EvalColor(MeshData *data, float x, float z);
+static float MeshData_EvalHeight(const MeshData *data, float x, float z);
+static vec3s MeshData_EvalPoint(const MeshData *data, float x, float z);
+static vec2s MeshData_EvalUV(const MeshData *data, float x, float z);
+static vec3s MeshData_EvalNormal(const MeshData *data, float x, float z);
+static float MeshData_EvalColor(const MeshData *data, float x, float z);
 static void MeshData_BuildQuad(MeshData *data, float x, float z, float step);
 static void MeshData_BuildFullMesh(MeshData *data);
 static void MeshData_ApplyTransformations(MeshData *data);
+static void MeshData_ComputeTexture(MeshData *data);
 
 static bool MeshData_Compile(MeshData *data, const char *str) {
 	int error;
@@ -40,11 +43,11 @@ static bool MeshData_Compile(MeshData *data, const char *str) {
 	return error == 0;
 }
 
-static float MeshData_EvalHeight(MeshData *data, float x, float z) {
+static float MeshData_EvalHeight(const MeshData *data, float x, float z) {
 	return MP_Eval(&data->expr, (const float[]){x, z});
 }
 
-static vec3s MeshData_EvalPoint(MeshData *data, float x, float z) {
+static vec3s MeshData_EvalPoint(const MeshData *data, float x, float z) {
 	return (vec3s) {
 		x,
 		MeshData_EvalHeight(data, x, z),
@@ -52,7 +55,16 @@ static vec3s MeshData_EvalPoint(MeshData *data, float x, float z) {
 	};
 }
 
-static vec3s MeshData_EvalNormal(MeshData *data, float x, float z) {
+static vec2s MeshData_EvalUV(const MeshData *data, float x, float z) {
+	vec2s p =  (vec2s) {
+		((x - data->graph_range) / data->graph_range) * 0.5f + 1.0f,
+		((z - data->graph_range) / data->graph_range) * 0.5f + 1.0f,
+	};
+
+	return p;
+}
+
+static vec3s MeshData_EvalNormal(const MeshData *data, float x, float z) {
 	float step = 0.00001f;
 	float og = MeshData_EvalHeight(data, x, z);
 
@@ -69,7 +81,7 @@ static vec3s MeshData_EvalNormal(MeshData *data, float x, float z) {
 			});
 }
 
-static float MeshData_EvalColor(MeshData *data, float x, float z) {
+static float MeshData_EvalColor(const MeshData *data, float x, float z) {
 	vec3s normal = MeshData_EvalNormal(data, x, z);
 
 	return glms_dot(data->light_dir, normal) * 0.5f + 0.5f;
@@ -81,6 +93,7 @@ static void MeshData_BuildQuad(MeshData *data, float x, float z, float step) {
 	for(int i = 0; i < 4; i++) {
 		v[i] = (Vertex) {
 			.pos = MeshData_EvalPoint(data, x + step * (i % 2), z + step * (i / 2)),
+			.uv = MeshData_EvalUV(data, x + step * (i % 2), z + step * (i / 2)),
 			.color = MeshData_EvalColor(data, x + step * (i % 2), z + step * (i / 2)),
 		};
 
@@ -104,11 +117,15 @@ static void MeshData_BuildFullMesh(MeshData *data) {
 	float graph_range = floorf(data->camera_distance / 2.0f);
 	float step = (graph_range * 2.0f) / 40.0f;
 
-	for(float z = -graph_range; z < graph_range + step * 0.1f; z += step) {
-		for(float x = -graph_range; x < graph_range + step * 0.1f; x += step) {
+	data->graph_range = graph_range;
+
+	for(float z = -graph_range; z < graph_range - step * 0.1f; z += step) {
+		for(float x = -graph_range; x < graph_range - step * 0.1f; x += step) {
 			MeshData_BuildQuad(data, x, z, step);
 		}
 	}
+
+	MeshData_ComputeTexture(data);
 }
 
 static void MeshData_ApplyTransformations(MeshData *data) {
@@ -135,7 +152,37 @@ static void MeshData_ApplyTransformations(MeshData *data) {
 	TCG_SortByDepth(&data->cg);
 }
 
-void MeshData_Init(MeshData *data) {
+static void MeshData_ComputeTexture(MeshData *data) {
+	void *raw;
+	int pitch;
+	const SDL_PixelFormatDetails *details = 
+		SDL_GetPixelFormatDetails(data->texture->format);
+
+	SDL_LockTexture(data->texture, NULL, &raw, &pitch);
+	uint32_t *pixels = raw;
+
+	pitch /= 4;
+
+	for(int j = 0; j < MESH_TEXTURE_SIZE; j++) {
+		for(int i = 0; i < MESH_TEXTURE_SIZE; i++) {
+			uint8_t color = (uint8_t) (MeshData_EvalColor(
+					data,
+					(((float) i / MESH_TEXTURE_SIZE) * 2.0f - 1.0f) * data->graph_range,
+					(((float) j / MESH_TEXTURE_SIZE) * 2.0f - 1.0f) * data->graph_range
+					) * 255.0f);
+
+			pixels[i + j * pitch] = SDL_MapRGBA(
+					details,
+					NULL,
+					color, color, color, 0xff
+					);
+		}
+	}
+
+	SDL_UnlockTexture(data->texture);
+}
+
+void MeshData_Init(MeshData *data, SDL_Renderer *renderer) {
 	data->cg = TCG_BaseData(
 			TCG_TRIANGLE,
 			sizeof(Vertex) / sizeof(float),
@@ -155,6 +202,14 @@ void MeshData_Init(MeshData *data) {
 	data->actual_camera_distance = CAMERA_MIN;
 	data->camera_distance = 6;
 	data->rotations.raw[0] = TCG_Radians(35.0f);
+
+	data->texture = SDL_CreateTexture(
+			renderer,
+			SDL_PIXELFORMAT_RGBA32,
+			SDL_TEXTUREACCESS_STREAMING,
+			MESH_TEXTURE_SIZE,
+			MESH_TEXTURE_SIZE
+			);
 }
 
 void MeshData_ComputeVertices(MeshData *data, const char *str) {
@@ -175,7 +230,8 @@ void MeshData_ConvertToDraw(MeshData *data) {
 
 		SDL_Vertex sdl_vertex = {
 			.position = {vertex->pos.raw[0], vertex->pos.raw[1]},
-			.color = {vertex->color, vertex->color, vertex->color, 1.0f},
+			.color = {1.0f, 1.0f, 1.0f, 1.0f},
+			.tex_coord = {vertex->uv.raw[0], vertex->uv.raw[1]},
 		};
 
 		arrpush(data->draw_vertices, sdl_vertex);
@@ -200,6 +256,7 @@ void MeshData_SetNewCameraDistance(MeshData *data, float camera_distance) {
 }
 
 void MeshData_Destroy(MeshData *data) {
+	SDL_DestroyTexture(data->texture);
 	arrfree(data->raw_vertices);
 	arrfree(data->draw_vertices);
 	TCG_FreeData(&data->cg);

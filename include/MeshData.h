@@ -32,11 +32,14 @@ typedef struct MeshData {
 	vec3s rotations;
 	float camera_distance;
 	float actual_camera_distance;
+	float graph_range;
 
 	TCG_Mat4 projection;
+
+	SDL_Texture *texture;
 } MeshData;
 
-void MeshData_Init(MeshData *data);
+void MeshData_Init(MeshData *data, SDL_Renderer *renderer);
 
 void MeshData_ComputeVertices(MeshData *data, const char *str);
 

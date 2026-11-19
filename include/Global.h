@@ -23,6 +23,8 @@ You should have received a copy of the GNU General Public License along with
 #include <stb_ds.h>
 #include <cglm/struct.h>
 
+#define MESH_TEXTURE_SIZE 256
+
 #define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 360
 
@@ -50,6 +52,7 @@ extern const SDL_FRect scrollbar_rect;
 
 typedef struct Vertex {
 	vec3s pos;
+	vec2s uv;
 	float color;
 } Vertex;
 

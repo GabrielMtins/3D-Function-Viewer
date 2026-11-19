@@ -113,7 +113,7 @@ static void App_UpdateViewTexture(void) {
 
 	SDL_RenderGeometry(
 			app->renderer,
-			NULL,
+			app->mesh_data.texture,
 			app->mesh_data.draw_vertices,
 			arrlen(app->mesh_data.draw_vertices),
 			NULL,
@@ -312,7 +312,7 @@ bool App_Init(void) {
 			SDL_LOGICAL_PRESENTATION_LETTERBOX
 			);
 
-	MeshData_Init(&app->mesh_data);
+	MeshData_Init(&app->mesh_data, app->renderer);
 
 	app->quit = false;
 	app->input_state = INPUT_IDLE;
