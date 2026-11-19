@@ -34,5 +34,5 @@ cmake --build build
 
 # Web demo
 
-You can check a web demo of this application on:
-[](https://gabrielmtins.github.io/3D-Function-Viewer/demo/).
+You can check a web demo of this application in [this
+link](https://gabrielmtins.github.io/3D-Function-Viewer/demo/).
