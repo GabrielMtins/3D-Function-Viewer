@@ -29,6 +29,7 @@ typedef struct App {
 
 	bool quit;
 	bool update_view_texture;
+	bool fullscreen;
 } App;
 
 bool App_Init(void);

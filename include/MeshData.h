@@ -28,4 +28,6 @@ void MeshData_ConvertToDraw(MeshData *data);
 
 void MeshData_SetNewCameraDistance(MeshData *data, float camera_distance);
 
+void MeshData_Destroy(MeshData *data);
+
 #endif

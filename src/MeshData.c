@@ -182,3 +182,9 @@ void MeshData_SetNewCameraDistance(MeshData *data, float camera_distance) {
 
 	MeshData_BuildFullMesh(data);
 }
+
+void MeshData_Destroy(MeshData *data) {
+	arrfree(data->raw_vertices);
+	arrfree(data->draw_vertices);
+	TCG_FreeData(&data->cg);
+}

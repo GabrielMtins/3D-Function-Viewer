@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "App.h"
@@ -27,7 +26,6 @@ int main(int argc, char **argv) {
 #else
 	App_Run();
 #endif
-
 
 	App_Quit();
 

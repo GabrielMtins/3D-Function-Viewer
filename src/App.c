@@ -18,10 +18,10 @@ static bool App_LoadFont(void);
 static void App_ComputeVertices(void);
 static void App_UpdateViewTexture(void);
 static void App_UpdateScrollData(void);
-static void App_HandleInputIdle(SDL_Event *event);
-static void App_HandleInputView3d(SDL_Event *event);
-static void App_HandleInputScrollbar(SDL_Event *event);
-static void App_HandleInput(SDL_Event *event);
+static void App_HandleInputIdle(const SDL_Event *event);
+static void App_HandleInputView3d(const SDL_Event *event);
+static void App_HandleInputScrollbar(const SDL_Event *event);
+static void App_HandleInput(const SDL_Event *event);
 static void App_RenderScrollBar(void);
 static void App_RenderExpressionText(void);
 static void App_Render(void);
@@ -38,12 +38,16 @@ static bool App_LoadFont(void) {
 			4
 			);
 
+	if(data == NULL) return false;
+
 	SDL_Surface *surface = SDL_CreateSurfaceFrom(
 			w, h,
 			SDL_PIXELFORMAT_RGBA32,
 			data,
 			w * 4
 			);
+
+	if(surface == NULL) return false;
 
 	app->font = SDL_CreateTextureFromSurface(
 			app->renderer,
@@ -79,7 +83,6 @@ static void App_UpdateViewTexture(void) {
 	if(current_tick < app->next_view_update) return;
 
 	app->next_view_update = current_tick + VIEW_UPDATE_RATE;
-
 	app->update_view_texture = false;
 
 	SDL_SetRenderTarget(
@@ -116,7 +119,7 @@ static void App_UpdateScrollData(void) {
 	app->update_view_texture = true;
 }
 
-static void App_HandleInputIdle(SDL_Event *event) {
+static void App_HandleInputIdle(const SDL_Event *event) {
 	if(TextHandle_HandleInput(event, &app->text_input)) {
 		App_ComputeVertices();
 		app->update_view_texture = true;
@@ -142,7 +145,7 @@ static void App_HandleInputIdle(SDL_Event *event) {
 	}
 }
 
-static void App_HandleInputView3d(SDL_Event *event) {
+static void App_HandleInputView3d(const SDL_Event *event) {
 	switch(event->type) {
 		case SDL_EVENT_MOUSE_MOTION:
 			app->mesh_data.rotations.raw[0] += PIF * event->motion.yrel / SCREEN_HEIGHT;
@@ -156,7 +159,7 @@ static void App_HandleInputView3d(SDL_Event *event) {
 	}
 }
 
-static void App_HandleInputScrollbar(SDL_Event *event) {
+static void App_HandleInputScrollbar(const SDL_Event *event) {
 	switch(event->type) {
 		case SDL_EVENT_MOUSE_MOTION:
 			app->scroll_perc -= event->motion.yrel / scrollbar_rect.h;
@@ -169,7 +172,7 @@ static void App_HandleInputScrollbar(SDL_Event *event) {
 	}
 }
 
-static void App_HandleInput(SDL_Event *event) {
+static void App_HandleInput(const SDL_Event *event) {
 	switch(app->input_state) {
 		case INPUT_IDLE:
 			App_HandleInputIdle(event);
@@ -311,8 +314,17 @@ bool App_Loop(void) {
 	while(SDL_PollEvent(&event)) {
 		SDL_ConvertEventToRenderCoordinates(app->renderer, &event);
 
-		if(event.type == SDL_EVENT_QUIT) {
-			app->quit = true;
+		switch(event.type) {
+			case SDL_EVENT_QUIT:
+				app->quit = true;
+				break;
+
+			case SDL_EVENT_KEY_DOWN:
+				if(event.key.key == SDLK_F11) {
+					app->fullscreen = !app->fullscreen;
+					SDL_SetWindowFullscreen(app->window, app->fullscreen);
+				}
+				break;
 		}
 
 		App_HandleInput(&event);
@@ -330,6 +342,11 @@ void App_Run(void) {
 }
 
 void App_Quit(void) {
+	MeshData_Destroy(&app->mesh_data);
+	arrfree(app->text_input.str);
+	arrfree(app->expr_str);
+	SDL_DestroyTexture(app->font);
+	SDL_DestroyTexture(app->view_texture);
 	SDL_DestroyRenderer(app->renderer);
 	SDL_DestroyWindow(app->window);
 	SDL_Quit();
