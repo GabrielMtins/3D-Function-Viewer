@@ -82,6 +82,10 @@ bool TextHandle_HandleInput(const SDL_Event *event, TextInput *input) {
 				break;
 			}
 
+			if(len == MAX_EXPR_SIZE) {
+				break;
+			}
+
 			arrins(
 					input->str,
 					input->cursor,

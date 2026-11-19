@@ -23,6 +23,7 @@ static void App_HandleInputView3d(SDL_Event *event);
 static void App_HandleInputScrollbar(SDL_Event *event);
 static void App_HandleInput(SDL_Event *event);
 static void App_RenderScrollBar(void);
+static void App_RenderExpressionText(void);
 static void App_Render(void);
 
 static bool App_LoadFont(void) {
@@ -123,18 +124,18 @@ static void App_HandleInputIdle(SDL_Event *event) {
 
 	switch(event->type) {
 		case SDL_EVENT_MOUSE_BUTTON_DOWN:
-			if(POINT_IN_RECT(event->button.x, event->button.y, view3d)) {
+			if(POINT_IN_RECT(event->button.x, event->button.y, view3d_rect)) {
 				app->input_state = INPUT_VIEW3D;
 			}
 		
-			if(POINT_IN_RECT(event->button.x, event->button.y, scrollbar)) {
-				app->scroll_perc = 1.0f - (event->button.y - scrollbar.y) / scrollbar.h;
+			if(POINT_IN_RECT(event->button.x, event->button.y, scrollbar_rect)) {
+				app->scroll_perc = 1.0f - (event->button.y - scrollbar_rect.y) / scrollbar_rect.h;
 				app->input_state = INPUT_SCROLLBAR;
 			}
 			break;
 
 		case SDL_EVENT_MOUSE_WHEEL:
-			app->scroll_perc += event->wheel.y / scrollbar.h * 8.0f;
+			app->scroll_perc += event->wheel.y / scrollbar_rect.h * 8.0f;
 			App_UpdateScrollData();
 			break;
 	}
@@ -157,7 +158,7 @@ static void App_HandleInputView3d(SDL_Event *event) {
 static void App_HandleInputScrollbar(SDL_Event *event) {
 	switch(event->type) {
 		case SDL_EVENT_MOUSE_MOTION:
-			app->scroll_perc -= event->motion.yrel / scrollbar.h;
+			app->scroll_perc -= event->motion.yrel / scrollbar_rect.h;
 			App_UpdateScrollData();
 			break;
 
@@ -185,14 +186,25 @@ static void App_HandleInput(SDL_Event *event) {
 
 static void App_RenderScrollBar(void) {
 	SDL_FRect pick_bar = {
-		scrollbar.x,
-		scrollbar.y + (scrollbar.h - SCROLLBAR_PICK_HEIGHT) * (1.0f - app->scroll_perc),
-		scrollbar.w,
+		scrollbar_rect.x,
+		scrollbar_rect.y + (scrollbar_rect.h - SCROLLBAR_PICK_HEIGHT) * (1.0f - app->scroll_perc),
+		scrollbar_rect.w,
 		SCROLLBAR_PICK_HEIGHT,
 	};
 
 	SDL_SetRenderDrawColor(app->renderer, 0x88, 0x88, 0x88, 0xff);
 	SDL_RenderFillRect(app->renderer, &pick_bar);
+}
+
+static void App_RenderExpressionText(void) {
+	TextHandle_RenderStr(app, 0, INPUT_TEXT_Y, "Expression: ", -1);
+
+	TextHandle_RenderInput(
+			app,
+			12 * SPACE_FONT_WIDTH,
+			INPUT_TEXT_Y,
+			&app->text_input
+			);
 }
 
 static void App_Render(void) {
@@ -207,12 +219,11 @@ static void App_Render(void) {
 			app->renderer,
 			app->view_texture,
 			NULL,
-			&view3d
+			&view3d_rect
 			);
 
 	App_RenderScrollBar();
-
-	TextHandle_RenderInput(app, 0.0f, SCREEN_HEIGHT - SPACE_FONT_HEIGHT, &app->text_input);
+	App_RenderExpressionText();
 
 	SDL_RenderPresent(app->renderer);
 }
@@ -260,8 +271,8 @@ bool App_Init(void) {
 			app->renderer,
 			SDL_PIXELFORMAT_RGBA32,
 			SDL_TEXTUREACCESS_TARGET,
-			view3d.w,
-			view3d.h
+			view3d_rect.w,
+			view3d_rect.h
 			);
 
 	if(app->view_texture == NULL) {

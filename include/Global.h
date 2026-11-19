@@ -14,17 +14,21 @@
 #define SPACE_FONT_WIDTH 6
 #define SPACE_FONT_HEIGHT 12
 
+#define INPUT_TEXT_Y (SCREEN_HEIGHT - SPACE_FONT_HEIGHT)
+
 #define SCROLLBAR_WIDTH 12
 
 #define CAMERA_MIN 4.0f
-#define CAMERA_MAX 20.0f
+#define CAMERA_MAX 21.0f
+
+#define MAX_EXPR_SIZE (SCREEN_WIDTH / SPACE_FONT_WIDTH - 12 - 1)
 
 #define SCROLLBAR_PICK_HEIGHT 24
 
 #define VIEW_UPDATE_RATE 16
 
-extern const SDL_FRect view3d;
-extern const SDL_FRect scrollbar;
+extern const SDL_FRect view3d_rect;
+extern const SDL_FRect scrollbar_rect;
 
 typedef struct Vertex {
 	vec3s pos;

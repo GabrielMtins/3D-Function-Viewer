@@ -115,7 +115,7 @@ static void MeshData_ApplyTransformations(MeshData *data) {
 	TCG_Transform(&data->cg, res);
 	TCG_SmartClipping(&data->cg);
 	TCG_ApplyProjection(&data->cg);
-	TCG_ScaleToScreenSize(&data->cg, view3d.w, view3d.h);
+	TCG_ScaleToScreenSize(&data->cg, view3d_rect.w, view3d_rect.h);
 	TCG_SortByDepth(&data->cg);
 }
 
@@ -131,13 +131,13 @@ void MeshData_Init(MeshData *data) {
 	TCG_Mat4Perspective(
 			data->projection,
 			TCG_Radians(45.0f),
-			view3d.w / view3d.h,
+			view3d_rect.w / view3d_rect.h,
 			0.01f,
 			100.0f
 			);
 
 	data->actual_camera_distance = CAMERA_MIN;
-	data->camera_distance = CAMERA_MIN;
+	data->camera_distance = 6;
 	data->rotations.raw[0] = TCG_Radians(35.0f);
 }
 
@@ -177,7 +177,7 @@ void MeshData_SetNewCameraDistance(MeshData *data, float camera_distance) {
 	if(ratio > 1.5f) {
 		data->camera_distance = 1.5f * data->camera_distance;
 	} else {
-		data->camera_distance = 0.66f * data->camera_distance;
+		data->camera_distance = data->camera_distance * 2 / 3;
 	}
 
 	MeshData_BuildFullMesh(data);
