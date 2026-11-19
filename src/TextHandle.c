@@ -2,13 +2,10 @@
 
 #include "App.h"
 
-#include <string.h>
-
-#define SPACE_FONT_WIDTH 18
-#define SPACE_FONT_HEIGHT 36
-
 #define FONT_WIDTH 6
 #define FONT_HEIGHT 12
+
+#define IS_VALID_CH(ch) ((ch) >= 32 && (ch) <= 126)
 
 static void TextHandle_RenderCursor(App *app, float x, float y) {
 	SDL_FRect dst = {
@@ -23,7 +20,7 @@ static void TextHandle_RenderCursor(App *app, float x, float y) {
 }
 
 static void TextHandle_RenderChar(App *app, float x, float y, char c) {
-	if(c < 32 || c > 126) return;
+	if(!IS_VALID_CH(c)) return;
 
 	SDL_FRect src = {
 		(((int) c - 32) % 16) * FONT_WIDTH,
@@ -47,58 +44,63 @@ static void TextHandle_RenderChar(App *app, float x, float y, char c) {
 			);
 }
 
-void TextHandle_RenderStr(App *app, float x, float y, const TextInput *input) {
-	int len = arrlen(input->str);
+void TextHandle_RenderStr(struct App *app, float x, float y, const char *str, int len) {
+	if(len < 0) len = strlen(str);
 
 	for(int i = 0; i < len; i++) {
-		if(i == input->cursor) {
-			TextHandle_RenderCursor(
-					app,
-					x + input->cursor * SPACE_FONT_WIDTH,
-					y
-					);
-		}
-		
 		TextHandle_RenderChar(
 				app,
 				x + i * SPACE_FONT_WIDTH,
 				y,
-				input->str[i]
-				);
-	}
-
-	if(input->cursor == len) {
-		TextHandle_RenderCursor(
-				app,
-				x + input->cursor * SPACE_FONT_WIDTH,
-				y
+				str[i]
 				);
 	}
 }
 
-void TextHandle_HandleInput(const SDL_Event *event, TextInput *input) {
+void TextHandle_RenderInput(App *app, float x, float y, const TextInput *input) {
+	TextHandle_RenderCursor(
+			app,
+			x + input->cursor * SPACE_FONT_WIDTH,
+			y
+			);
+	
+	TextHandle_RenderStr(app, x, y, input->str, arrlen(input->str));
+}
+
+bool TextHandle_HandleInput(const SDL_Event *event, TextInput *input) {
+	bool modified = false;
 	int len = arrlen(input->str);
+	char c;
 
 	if(input->cursor > len) input->cursor = len;
 
 	switch(event->type) {
 		case SDL_EVENT_TEXT_INPUT:
+			c = event->text.text[0];
+
+			if(!IS_VALID_CH(c)) {
+				break;
+			}
+
 			arrins(
 					input->str,
 					input->cursor,
-					event->text.text[0]
+					c
 					);
 
 			input->cursor++;
+			modified = true;
 			break;
 
 		case SDL_EVENT_KEY_DOWN:
 			if(event->key.key == SDLK_LEFT && input->cursor > 0) {
 				input->cursor--;
+				modified = true;
 			}
 
 			if(event->key.key == SDLK_RIGHT && input->cursor < arrlen(input->str)) {
 				input->cursor++;
+				modified = true;
 			}
 
 			if(event->key.key == SDLK_BACKSPACE && input->cursor > 0) {
@@ -108,8 +110,11 @@ void TextHandle_HandleInput(const SDL_Event *event, TextInput *input) {
 					  );
 
 				input->cursor--;
+				modified = true;
 			}
 
 			break;
 	}
+
+	return modified;
 }

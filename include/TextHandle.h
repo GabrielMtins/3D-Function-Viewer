@@ -10,8 +10,10 @@ typedef struct TextInput {
 	int cursor;
 } TextInput;
 
-void TextHandle_RenderStr(struct App *app, float x, float y, const TextInput *input);
+void TextHandle_RenderStr(struct App *app, float x, float y, const char *str, int len);
 
-void TextHandle_HandleInput(const SDL_Event *event, TextInput *input);
+void TextHandle_RenderInput(struct App *app, float x, float y, const TextInput *input);
+
+bool TextHandle_HandleInput(const SDL_Event *event, TextInput *input);
 
 #endif

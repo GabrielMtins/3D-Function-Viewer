@@ -7,5 +7,6 @@
 #define MPARSE_IMPLEMENTATION
 #include <MParse.h>
 
+#define TINYCG_USE_STDLIB
 #define TINYCG_IMPLEMENTATION
 #include <TinyCG.h>
