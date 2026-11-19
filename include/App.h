@@ -23,6 +23,10 @@ typedef struct App {
 
 	InputState input_state;
 
+	float scroll_perc;
+
+	uint32_t next_view_update;
+
 	bool quit;
 	bool update_view_texture;
 } App;

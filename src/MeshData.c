@@ -1,5 +1,8 @@
 #include "MeshData.h"
 
+#include <math.h>
+#include <wchar.h>
+
 static bool MeshData_Compile(MeshData *data, const char *str);
 static float MeshData_EvalHeight(MeshData *data, float x, float z);
 static vec3s MeshData_EvalPoint(MeshData *data, float x, float z);
@@ -64,6 +67,10 @@ static void MeshData_BuildQuad(MeshData *data, float x, float z, float step) {
 			.pos = MeshData_EvalPoint(data, x + step * (i % 2), z + step * (i / 2)),
 			.color = MeshData_EvalColor(data, x + step * (i % 2), z + step * (i / 2)),
 		};
+
+		if(!isfinite(v[i].pos.raw[1])) {
+			return;
+		}
 	}
 
 	arrpush(data->raw_vertices, v[0]);
@@ -101,7 +108,7 @@ static void MeshData_ApplyTransformations(MeshData *data) {
 	TCG_Mat4Mul(op, res);
 	TCG_Mat4RotateX(op, data->rotations.raw[0]);
 	TCG_Mat4Mul(op, res);
-	TCG_Mat4Translate(op, (TCG_Vec3){0.0f, 0.0f, -data->camera_distance});
+	TCG_Mat4Translate(op, (TCG_Vec3){0.0f, 0.0f, -data->actual_camera_distance -2.0f});
 	TCG_Mat4Mul(op, res);
 	TCG_Mat4Mul(data->projection, res);
 
@@ -129,7 +136,8 @@ void MeshData_Init(MeshData *data) {
 			100.0f
 			);
 
-	data->camera_distance = 8.0f;
+	data->actual_camera_distance = CAMERA_MIN;
+	data->camera_distance = CAMERA_MIN;
 	data->rotations.raw[0] = TCG_Radians(35.0f);
 }
 
@@ -156,4 +164,21 @@ void MeshData_ConvertToDraw(MeshData *data) {
 
 		arrpush(data->draw_vertices, sdl_vertex);
 	}
+}
+
+void MeshData_SetNewCameraDistance(MeshData *data, float camera_distance) {
+	float ratio = camera_distance / data->camera_distance;
+	data->actual_camera_distance = camera_distance;
+
+	if(ratio < 1.5f && ratio > 0.66f) {
+		return;
+	}
+
+	if(ratio > 1.5f) {
+		data->camera_distance = 1.5f * data->camera_distance;
+	} else {
+		data->camera_distance = 0.66f * data->camera_distance;
+	}
+
+	MeshData_BuildFullMesh(data);
 }

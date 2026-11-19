@@ -5,16 +5,26 @@
 #include <stb_ds.h>
 #include <cglm/struct.h>
 
-#define SCREEN_WIDTH 480
+#define SCREEN_WIDTH 640
 #define SCREEN_HEIGHT 360
 
-#define WINDOW_WIDTH 960
+#define WINDOW_WIDTH 1280
 #define WINDOW_HEIGHT 720
 
 #define SPACE_FONT_WIDTH 6
 #define SPACE_FONT_HEIGHT 12
 
+#define SCROLLBAR_WIDTH 12
+
+#define CAMERA_MIN 4.0f
+#define CAMERA_MAX 20.0f
+
+#define SCROLLBAR_PICK_HEIGHT 24
+
+#define VIEW_UPDATE_RATE 16
+
 extern const SDL_FRect view3d;
+extern const SDL_FRect scrollbar;
 
 typedef struct Vertex {
 	vec3s pos;

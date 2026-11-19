@@ -15,6 +15,7 @@ typedef struct MeshData {
 	vec3s light_dir;
 	vec3s rotations;
 	float camera_distance;
+	float actual_camera_distance;
 
 	TCG_Mat4 projection;
 } MeshData;
@@ -24,5 +25,7 @@ void MeshData_Init(MeshData *data);
 void MeshData_ComputeVertices(MeshData *data, const char *str);
 
 void MeshData_ConvertToDraw(MeshData *data);
+
+void MeshData_SetNewCameraDistance(MeshData *data, float camera_distance);
 
 #endif

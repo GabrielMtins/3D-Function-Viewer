@@ -17,9 +17,12 @@ static App *app = NULL;
 static bool App_LoadFont(void);
 static void App_ComputeVertices(void);
 static void App_UpdateViewTexture(void);
+static void App_UpdateScrollData(void);
 static void App_HandleInputIdle(SDL_Event *event);
 static void App_HandleInputView3d(SDL_Event *event);
+static void App_HandleInputScrollbar(SDL_Event *event);
 static void App_HandleInput(SDL_Event *event);
+static void App_RenderScrollBar(void);
 static void App_Render(void);
 
 static bool App_LoadFont(void) {
@@ -69,7 +72,12 @@ static void App_ComputeVertices(void) {
 }
 
 static void App_UpdateViewTexture(void) {
+	uint32_t current_tick = SDL_GetTicks();
+
 	if(!app->update_view_texture) return;
+	if(current_tick < app->next_view_update) return;
+
+	app->next_view_update = current_tick + VIEW_UPDATE_RATE;
 
 	app->update_view_texture = false;
 
@@ -95,18 +103,40 @@ static void App_UpdateViewTexture(void) {
 	SDL_SetRenderTarget(app->renderer, NULL);
 }
 
+static void App_UpdateScrollData(void) {
+	if(app->scroll_perc < 0.0f) app->scroll_perc = 0.0f;
+	if(app->scroll_perc > 1.0f) app->scroll_perc = 1.0f;
+
+	MeshData_SetNewCameraDistance(
+			&app->mesh_data,
+			CAMERA_MIN + (CAMERA_MAX - CAMERA_MIN) * app->scroll_perc
+			);
+
+	app->update_view_texture = true;
+}
+
 static void App_HandleInputIdle(SDL_Event *event) {
 	if(TextHandle_HandleInput(event, &app->text_input)) {
 		App_ComputeVertices();
 		app->update_view_texture = true;
 	}
 
-	if(event->type != SDL_EVENT_MOUSE_BUTTON_DOWN) {
-		return;
-	}
+	switch(event->type) {
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+			if(POINT_IN_RECT(event->button.x, event->button.y, view3d)) {
+				app->input_state = INPUT_VIEW3D;
+			}
+		
+			if(POINT_IN_RECT(event->button.x, event->button.y, scrollbar)) {
+				app->scroll_perc = 1.0f - (event->button.y - scrollbar.y) / scrollbar.h;
+				app->input_state = INPUT_SCROLLBAR;
+			}
+			break;
 
-	if(POINT_IN_RECT(event->button.x, event->button.y, view3d)) {
-		app->input_state = INPUT_VIEW3D;
+		case SDL_EVENT_MOUSE_WHEEL:
+			app->scroll_perc += event->wheel.y / scrollbar.h * 8.0f;
+			App_UpdateScrollData();
+			break;
 	}
 }
 
@@ -116,6 +146,19 @@ static void App_HandleInputView3d(SDL_Event *event) {
 			app->mesh_data.rotations.raw[0] += PIF * event->motion.yrel / SCREEN_HEIGHT;
 			app->mesh_data.rotations.raw[1] += PIF * event->motion.xrel / SCREEN_WIDTH;
 			app->update_view_texture = true;
+			break;
+
+		case SDL_EVENT_MOUSE_BUTTON_UP:
+			app->input_state = INPUT_IDLE;
+			break;
+	}
+}
+
+static void App_HandleInputScrollbar(SDL_Event *event) {
+	switch(event->type) {
+		case SDL_EVENT_MOUSE_MOTION:
+			app->scroll_perc -= event->motion.yrel / scrollbar.h;
+			App_UpdateScrollData();
 			break;
 
 		case SDL_EVENT_MOUSE_BUTTON_UP:
@@ -135,8 +178,21 @@ static void App_HandleInput(SDL_Event *event) {
 			break;
 
 		case INPUT_SCROLLBAR:
+			App_HandleInputScrollbar(event);
 			break;
 	}
+}
+
+static void App_RenderScrollBar(void) {
+	SDL_FRect pick_bar = {
+		scrollbar.x,
+		scrollbar.y + (scrollbar.h - SCROLLBAR_PICK_HEIGHT) * (1.0f - app->scroll_perc),
+		scrollbar.w,
+		SCROLLBAR_PICK_HEIGHT,
+	};
+
+	SDL_SetRenderDrawColor(app->renderer, 0x88, 0x88, 0x88, 0xff);
+	SDL_RenderFillRect(app->renderer, &pick_bar);
 }
 
 static void App_Render(void) {
@@ -153,6 +209,8 @@ static void App_Render(void) {
 			NULL,
 			&view3d
 			);
+
+	App_RenderScrollBar();
 
 	TextHandle_RenderInput(app, 0.0f, SCREEN_HEIGHT - SPACE_FONT_HEIGHT, &app->text_input);
 
