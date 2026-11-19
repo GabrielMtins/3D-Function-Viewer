@@ -33,7 +33,7 @@ typedef struct App {
 
 bool App_Init(void);
 
-void App_Loop(void);
+bool App_Loop(void);
 
 void App_Run(void);
 

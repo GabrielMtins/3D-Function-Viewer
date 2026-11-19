@@ -131,6 +131,7 @@ static void App_HandleInputIdle(SDL_Event *event) {
 			if(POINT_IN_RECT(event->button.x, event->button.y, scrollbar_rect)) {
 				app->scroll_perc = 1.0f - (event->button.y - scrollbar_rect.y) / scrollbar_rect.h;
 				app->input_state = INPUT_SCROLLBAR;
+				App_UpdateScrollData();
 			}
 			break;
 
@@ -304,7 +305,7 @@ app_init_end:
 	return success;
 }
 
-void App_Loop(void) {
+bool App_Loop(void) {
 	SDL_Event event;
 
 	while(SDL_PollEvent(&event)) {
@@ -319,6 +320,7 @@ void App_Loop(void) {
 
 	App_Render();
 
+	return !app->quit;
 }
 
 void App_Run(void) {
