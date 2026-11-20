@@ -597,7 +597,7 @@ function createExportWrapper(name, nargs) {
 // include: runtime_exceptions.js
 // end include: runtime_exceptions.js
 function findWasmBinary() {
-    var f = 'index.wasm';
+    var f = '3D-Function-Viewer.wasm';
     if (!isDataURI(f)) {
       return locateFile(f);
     }
