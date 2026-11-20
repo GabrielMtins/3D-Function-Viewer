@@ -9,7 +9,7 @@ This program can be used to view a variety of functions of type `z = f(x,y)`
 through many different angles.
 
 **3D Function Viewer** only depends on **SDL3**, CMake, the C standard library
-and a few single-header files that are already included in this repository.
+and a few single-header libraries that are already included in this repository.
 
 # Building
 
@@ -28,7 +28,7 @@ If you want to compile this application to webassembly, here are the steps:
 ```
 git clone --recursive https://github.com/GabrielMtins/3D-Function-Viewer.git
 cd 3D-Function-Viewer
-emcmake -B build
+emcmake cmake -B build
 cmake --build build
 ```
 

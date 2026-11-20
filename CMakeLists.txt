@@ -33,6 +33,10 @@ if(EMSCRIPTEN)
 	add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
 	target_link_libraries(${PROJECT_NAME} PRIVATE SDL3::SDL3)
 
+	target_link_options(${PROJECT_NAME} PRIVATE
+		"--shell-file" "${EMSCRIPTEN_ROOT_PATH}/src/shell_minimal.html"
+	)
+
 	set(CMAKE_EXECUTABLE_SUFFIX ".html" CACHE INTERNAL "")
 else()
 	include(FindPkgConfig)
