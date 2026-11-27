@@ -132,17 +132,14 @@ static void MeshData_ApplyTransformations(MeshData *data) {
 	data->cg.len = 0;
 	TCG_AppendData(&data->cg, data->raw_vertices, arrlen(data->raw_vertices));
 
-	TCG_Mat4 res, op;
+	TCG_Mat4 res;
 
 	TCG_Mat4Identity(res);
-	TCG_Mat4Scale(op, (TCG_Vec3){1.0f, 1.0f, -1.0f});
-	TCG_Mat4Mul(op, res);
-	TCG_Mat4RotateY(op, data->rotations.raw[1]);
-	TCG_Mat4Mul(op, res);
-	TCG_Mat4RotateX(op, data->rotations.raw[0]);
-	TCG_Mat4Mul(op, res);
-	TCG_Mat4Translate(op, (TCG_Vec3){0.0f, 0.0f, -data->actual_camera_distance -2.0f});
-	TCG_Mat4Mul(op, res);
+
+	TCG_Mat4ScaleMul(res, (TCG_Vec3){1.0f, 1.0f, -1.0f});
+	TCG_Mat4RotateYMul(res, data->rotations.raw[1]);
+	TCG_Mat4RotateXMul(res, data->rotations.raw[0]);
+	TCG_Mat4TranslateMul(res, (TCG_Vec3){0.0f, 0.0f, -data->actual_camera_distance -2.0f});
 	TCG_Mat4Mul(data->projection, res);
 
 	TCG_Transform(&data->cg, res);
